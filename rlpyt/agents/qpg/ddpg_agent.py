@@ -32,9 +32,9 @@ class DdpgAgent(BaseAgent):
             action_noise_clip=None,
             ):
         if model_kwargs is None:
-            model_kwargs = dict(hidden_sizes=[400, 300])
+            model_kwargs = dict()
         if q_model_kwargs is None:
-            q_model_kwargs = dict(hidden_sizes=[400, 300])
+            q_model_kwargs = dict()
         save__init__args(locals())
         super().__init__()  # For async setup.
 
@@ -74,8 +74,11 @@ class DdpgAgent(BaseAgent):
 
     def make_env_to_model_kwargs(self, env_spaces):
         assert len(env_spaces.action.shape) == 1
+        # obs_shape = tuple([env_spaces.observation.shape.desired_goal[0] +env_spaces.observation.shape.observation[0]])
+        img_shape = env_spaces.observation.shape.observation
         return dict(
-            observation_shape=env_spaces.observation.shape,
+            # observation_shape=obs_shape,
+            image_shape = img_shape,
             action_size=env_spaces.action.shape[0],
         )
 
