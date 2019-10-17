@@ -30,6 +30,7 @@ def logger_context(log_dir, run_ID, name, log_params=None, snapshot_mode="none")
     text_log_file = osp.join(exp_dir, "debug.log")
     params_log_file = osp.join(exp_dir, "params.json")
 
+    logger.set_vis_dir(exp_dir)
     logger.set_snapshot_dir(exp_dir)
     logger.add_text_output(text_log_file)
     logger.add_tabular_output(tabular_log_file)

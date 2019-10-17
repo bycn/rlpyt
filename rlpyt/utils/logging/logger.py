@@ -3,6 +3,7 @@ from enum import Enum
 from rlpyt.utils.logging.tabulate import tabulate
 from rlpyt.utils.logging.console import mkdir_p, colorize
 from rlpyt.utils.logging.autoargs import get_all_parameters
+from rlpyt.utils.logging.visualize import frames_to_gif
 from contextlib import contextmanager
 import numpy as np
 import os
@@ -46,6 +47,8 @@ _tf_summary_writer = None
 
 _disabled = False
 _tabular_disabled = False
+
+_vis_dir = None
 
 
 def disable():
@@ -116,12 +119,18 @@ def hold_tabular_output(file_name):
         _tabular_outputs.remove(file_name)
         _tabular_fds_hold[file_name] = _tabular_fds.pop(file_name)
 
+def set_vis_dir(dir_name):
+    os.system("mkdir -p %s" % dir_name)
+    global _vis_dir
+    _vis_dir = dir_name   
 
 def set_snapshot_dir(dir_name):
     os.system("mkdir -p %s" % dir_name)
     global _snapshot_dir
     _snapshot_dir = dir_name
 
+def get_vis_dir():
+    return _vis_dir
 
 def get_snapshot_dir():
     return _snapshot_dir
@@ -451,3 +460,10 @@ def record_tabular_misc_stat(key, values, placement='back'):
         record_tabular(prefix + "Median" + suffix, np.nan)
         record_tabular(prefix + "Min" + suffix, np.nan)
         record_tabular(prefix + "Max" + suffix, np.nan)
+
+def save_rollout_vis(frames_list, itr):
+    folder_name = osp.join(get_vis_dir(), "vis_itr_%d" % itr)
+    os.system("mkdir -p %s" % folder_name)
+    for i, frames in enumerate(frames_list):
+        file_name = osp.join(folder_name, "env_%d.gif" % i)
+        frames_to_gif(file_name, frames)
