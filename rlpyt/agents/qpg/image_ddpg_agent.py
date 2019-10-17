@@ -8,7 +8,7 @@ from rlpyt.utils.quick_args import save__init__args
 from rlpyt.distributions.gaussian import Gaussian, DistInfo
 from rlpyt.utils.buffer import buffer_to
 from rlpyt.utils.logging import logger
-from rlpyt.models.qpg.mlp import MuMlpModel, QofMuMlpModel
+from rlpyt.models.qpg.conv2d import MuConv2dModel, QofMuConv2dModel
 from rlpyt.models.utils import update_state_dict
 from rlpyt.utils.collections import namedarraytuple
 
@@ -16,14 +16,14 @@ from rlpyt.utils.collections import namedarraytuple
 AgentInfo = namedarraytuple("AgentInfo", ["mu"])
 
 
-class DdpgAgent(BaseAgent):
+class ImageDdpgAgent(BaseAgent):
 
     shared_mu_model = None
 
     def __init__(
             self,
-            ModelCls=MuMlpModel,  # Mu model.
-            QModelCls=QofMuMlpModel,
+            ModelCls=MuConv2dModel,  # Mu model.
+            QModelCls=QofMuConv2dModel,
             model_kwargs=None,  # Mu model.
             q_model_kwargs=None,
             initial_model_state_dict=None,  # Mu model.
@@ -32,9 +32,9 @@ class DdpgAgent(BaseAgent):
             action_noise_clip=None,
             ):
         if model_kwargs is None:
-            model_kwargs = dict(hidden_sizes=[400, 300])
+            model_kwargs = dict()
         if q_model_kwargs is None:
-            q_model_kwargs = dict(hidden_sizes=[400, 300])
+            q_model_kwargs = dict()
         save__init__args(locals())
         super().__init__()  # For async setup.
 
@@ -74,9 +74,9 @@ class DdpgAgent(BaseAgent):
 
     def make_env_to_model_kwargs(self, env_spaces):
         assert len(env_spaces.action.shape) == 1
-        obs_shape = tuple([env_spaces.observation.shape.desired_goal[0] +env_spaces.observation.shape.observation[0]])
+        img_shape = env_spaces.observation.shape.observation
         return dict(
-            observation_shape=obs_shape,
+            image_shape = img_shape,
             action_size=env_spaces.action.shape[0],
         )
 
