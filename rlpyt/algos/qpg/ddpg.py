@@ -12,6 +12,8 @@ from rlpyt.replays.non_sequence.time_limit import (TlUniformReplayBuffer,
 from rlpyt.utils.collections import namedarraytuple
 from rlpyt.utils.tensor import valid_mean
 from rlpyt.algos.utils import valid_from_done
+from torchviz import make_dot
+from torch.utils.tensorboard import SummaryWriter
 
 OptInfo = namedtuple("OptInfo",
     ["muLoss", "qLoss", "muGradNorm", "qGradNorm"])
@@ -118,7 +120,9 @@ class DDPG(RlAlgorithm):
             self.replay_buffer.append_samples(samples_to_buffer)
         opt_info = OptInfo(*([] for _ in range(len(OptInfo._fields))))
         if itr < self.min_itr_learn:
-            return opt_info
+            return opt_info   
+        # f = open("logging_gradients5.txt", "a")    
+        # f.write("Iteration " + str(itr) + "\n")      
         for _ in range(self.updates_per_optimize):
             samples_from_replay = self.replay_buffer.sample_batch(self.batch_size)
             if self.mid_batch_reset and not self.agent.recurrent:
@@ -129,26 +133,51 @@ class DDPG(RlAlgorithm):
                 # To avoid non-use of bootstrap when environment is 'done' due to
                 # time-limit, turn off training on these samples.
                 valid *= (1 - samples_from_replay.timeout_n.float())
+            #     from IPython import embed; embed()
             self.q_optimizer.zero_grad()
+            # qparams = list(self.agent.q_model.named_parameters())
+            # f.write("Q Params\n")
+            # f.write(str(qparams) + "\n")
             q_loss = self.q_loss(samples_from_replay, valid)
+            # dot = make_dot(q_loss, dict(self.agent.q_model.named_parameters()))
+            # dot.format = "png"
+            # dot.render("q_model_obs")
             q_loss.backward()
+            # qparams = list(self.agent.q_model.named_parameters())
+            # f.write("Q Gradients\n")
+            # for k, v in qparams:
+            #     f.write(str(k) + " " + str(v.grad) + "\n")
             q_grad_norm = torch.nn.utils.clip_grad_norm_(
                 self.agent.q_parameters(), self.clip_grad_norm)
+            # f.write("Qgradnorm: " + str(q_grad_norm) + "\n")
             self.q_optimizer.step()
             opt_info.qLoss.append(q_loss.item())
             opt_info.qGradNorm.append(q_grad_norm)
             self.update_counter += 1
             if self.update_counter % self.policy_update_interval == 0:
                 self.mu_optimizer.zero_grad()
+                # muparams = list(self.agent.model.named_parameters())
+                # f.write("Mu Params\n")
+                # f.write(str(muparams) + "\n")
                 mu_loss = self.mu_loss(samples_from_replay, valid)
+                # dot = make_dot(mu_loss)
+                # dot.format = "png"
+                # dot.render("mu_model_obs")
+                # assert False
                 mu_loss.backward()
+                # muparams = list(self.agent.model.named_parameters())
+                # f.write("Mu Gradients\n")
+                # for k, v in muparams:
+                #     f.write(str(k) + " " + str(v.grad) + "\n")
                 mu_grad_norm = torch.nn.utils.clip_grad_norm_(
                     self.agent.mu_parameters(), self.clip_grad_norm)
+                # f.write("Mugradnorm: " + str(mu_grad_norm) + "\n")
                 self.mu_optimizer.step()
                 opt_info.muLoss.append(mu_loss.item())
                 opt_info.muGradNorm.append(mu_grad_norm)
             if self.update_counter % self.target_update_interval == 0:
                 self.agent.update_target(self.target_update_tau)
+        # f.close()
         return opt_info
 
     def samples_to_buffer(self, samples):

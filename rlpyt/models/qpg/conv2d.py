@@ -40,13 +40,11 @@ class MuConv2dModel(torch.nn.Module):
         )
 
     def forward(self, observation, prev_action, prev_reward):
-        #ideal
-        # img = observation.observation.rgb_camera.type(torch.float)
         img = observation.observation.type(torch.float)
+        # img = observation.type(torch.float)
         img = img.mul_(1. / 255)  # From [0-255] to [0-1], in place.
-        lead_dim, T, B, img_shape = infer_leading_dims(img, self._c)
+        lead_dim, T, B, img_shape = infer_leading_dims(img, 3)
         conv_out = self.conv(img.view(T * B, *img_shape))
-
         mu = self._output_max * torch.tanh(self.mlp(conv_out.view(T * B, -1)))
         mu = restore_leading_dims(mu, lead_dim, T, B)
         return mu
@@ -87,11 +85,10 @@ class QofMuConv2dModel(torch.nn.Module):
     
 
     def forward(self, observation, prev_action, prev_reward, action):
-        # ideal
-        # img = observation.observation.rgb_camera.type(torch.float)
         img = observation.observation.type(torch.float)
+        # img = observation.type(torch.float)
         img = img.mul_(1. / 255)  # From [0-255] to [0-1], in place.
-        lead_dim, T, B, img_shape = infer_leading_dims(img, self._c )
+        lead_dim, T, B, img_shape = infer_leading_dims(img, 3)
 
         conv_out = self.conv(img.view(T * B, *img_shape))
         q_input = torch.cat(

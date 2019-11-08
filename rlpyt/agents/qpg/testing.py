@@ -1,4 +1,5 @@
 
+
 import torch
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.nn.parallel import DistributedDataParallelCPU as DDPC
@@ -8,22 +9,24 @@ from rlpyt.utils.quick_args import save__init__args
 from rlpyt.distributions.gaussian import Gaussian, DistInfo
 from rlpyt.utils.buffer import buffer_to
 from rlpyt.utils.logging import logger
-from rlpyt.models.qpg.mlp import MuMlpModel, QofMuMlpModel
+from rlpyt.models.qpg.conv2d import MuConv2dModel, QofMuConv2dModel
 from rlpyt.models.utils import update_state_dict
 from rlpyt.utils.collections import namedarraytuple
+
+from torch.utils.tensorboard import SummaryWriter
 
 
 AgentInfo = namedarraytuple("AgentInfo", ["mu"])
 
 
-class DdpgAgent(BaseAgent):
+class RandomDdpgAgent(BaseAgent):
 
     shared_mu_model = None
 
     def __init__(
             self,
-            ModelCls=MuMlpModel,  # Mu model.
-            QModelCls=QofMuMlpModel,
+            ModelCls=MuConv2dModel,  # Mu model.
+            QModelCls=QofMuConv2dModel,
             model_kwargs=None,  # Mu model.
             q_model_kwargs=None,
             initial_model_state_dict=None,  # Mu model.
@@ -32,9 +35,9 @@ class DdpgAgent(BaseAgent):
             action_noise_clip=None,
             ):
         if model_kwargs is None:
-            model_kwargs = dict(hidden_sizes=[400, 300])
+            model_kwargs = dict()
         if q_model_kwargs is None:
-            q_model_kwargs = dict(hidden_sizes=[400, 300])
+            q_model_kwargs = dict()
         save__init__args(locals())
         super().__init__()  # For async setup.
 
@@ -74,10 +77,9 @@ class DdpgAgent(BaseAgent):
 
     def make_env_to_model_kwargs(self, env_spaces):
         assert len(env_spaces.action.shape) == 1
-        # obs_shape = tuple([env_spaces.observation.shape.desired_goal[0] + env_spaces.observation.shape.observation[0]])
-        obs_shape = env_spaces.observation.shape.observation
+        img_shape = env_spaces.observation.shape.observation
         return dict(
-            observation_shape=obs_shape,
+            image_shape = img_shape,
             action_size=env_spaces.action.shape[0],
         )
 
@@ -103,6 +105,9 @@ class DdpgAgent(BaseAgent):
 
     @torch.no_grad()
     def step(self, observation, prev_action, prev_reward):
+        # with SummaryWriter("tensorboard") as w:
+        #     w.add_graph(self.model, (observation, prev_action, prev_reward))
+        # assert False
         model_inputs = buffer_to((observation, prev_action, prev_reward),
             device=self.device)
         mu = self.model(*model_inputs)
@@ -148,3 +153,6 @@ class DdpgAgent(BaseAgent):
         self.q_model.load_state_dict(state_dict["q_model"])
         self.target_model.load_state_dict(state_dict["target_model"])
         self.target_q_model.load_state_dict(state_dict["target_q_model"])
+
+    def get_model(self):
+        return self.model

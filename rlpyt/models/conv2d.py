@@ -1,5 +1,6 @@
 
 import torch
+import numpy as np
 
 from rlpyt.models.mlp import MlpModel
 from rlpyt.models.utils import conv2d_output_shape
@@ -16,7 +17,8 @@ class Conv2dModel(torch.nn.Module):
             paddings=None,
             nonlinearity=torch.nn.ReLU,  # Module, not Functional.
             use_maxpool=False,  # if True: convs use stride 1, maxpool downsample.
-            head_sizes=None,  # Put an MLP head on top.
+            head_sizes=None,  # Put an MLP head on top.,
+            use_batch_norm=False
             ):
         super().__init__()
         if paddings is None:
@@ -32,9 +34,19 @@ class Conv2dModel(torch.nn.Module):
         conv_layers = [torch.nn.Conv2d(in_channels=ic, out_channels=oc,
             kernel_size=k, stride=s, padding=p) for (ic, oc, k, s, p) in
             zip(in_channels, channels, kernel_sizes, strides, paddings)]
+        for conv in conv_layers:
+        #     torch.nn.init.kaiming_uniform_(conv.weight,a=0.2, nonlinearity='leaky_relu')
+            torch.nn.init.kaiming_uniform_(conv.weight,a=np.sqrt(5), nonlinearity='relu')
+
+        batch_layers = [
+            torch.nn.BatchNorm2d(oc) for oc in channels
+        ]
         sequence = list()
-        for conv_layer, maxp_stride in zip(conv_layers, maxp_strides):
-            sequence.extend([conv_layer, nonlinearity()])
+        for conv_layer, maxp_stride, batch_layer in zip(conv_layers, maxp_strides, batch_layers):
+            if use_batch_norm:
+                sequence.extend([conv_layer, nonlinearity(), batch_layer])
+            else:
+                sequence.extend([conv_layer, nonlinearity()])
             if maxp_stride > 1:
                 sequence.append(torch.nn.MaxPool2d(maxp_stride))  # No padding.
         self.conv = torch.nn.Sequential(*sequence)

@@ -10,6 +10,8 @@ from rlpyt.utils.quick_args import save__init__args
 from rlpyt.utils.seed import set_seed, make_seed
 from rlpyt.utils.logging import logger
 from rlpyt.utils.prog_bar import ProgBarCounter
+from torch.utils.tensorboard import SummaryWriter
+import numpy as np
 
 
 class MinibatchRlBase(BaseRunner):
@@ -173,6 +175,13 @@ class MinibatchRlBase(BaseRunner):
                         [info[k] for info in traj_infos])
 
         if self._opt_infos:
+            # with SummaryWriter("logdir") as w:
+            #     vis = {}
+            #     if len(self._opt_infos["muGradNorm"]) > 0:
+            #         vis["muGradNormAvg"] = np.average(self._opt_infos["muGradNorm"])
+            #     if len(self._opt_infos["qGradNorm"]) > 0:
+            #         vis["qGradNormAvg"] = np.average(self._opt_infos["qGradNorm"])
+            #     w.add_scalars("stats", vis)
             for k, v in self._opt_infos.items():
                 logger.record_tabular_misc_stat(k, v)
         self._opt_infos = {k: list() for k in self._opt_infos}  # (reset)

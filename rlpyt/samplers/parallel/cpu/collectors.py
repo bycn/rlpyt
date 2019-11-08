@@ -30,6 +30,9 @@ class CpuResetCollector(DecorrelatingStartCollector):
             for b, env in enumerate(self.envs):
                 # Environment inputs and outputs are numpy arrays.
                 o, r, d, env_info = env.step(action[b])
+                # if t % 20 == 0:
+                #     print("obs", o)
+                #      print("reward", r)
                 traj_infos[b].step(observation[b], action[b], r, d, agent_info[b],
                     env_info)
                 if getattr(env_info, "traj_done", d):

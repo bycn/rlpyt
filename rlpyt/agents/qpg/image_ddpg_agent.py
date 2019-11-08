@@ -12,6 +12,8 @@ from rlpyt.models.qpg.conv2d import MuConv2dModel, QofMuConv2dModel
 from rlpyt.models.utils import update_state_dict
 from rlpyt.utils.collections import namedarraytuple
 
+from torch.utils.tensorboard import SummaryWriter
+
 
 AgentInfo = namedarraytuple("AgentInfo", ["mu"])
 
@@ -104,6 +106,9 @@ class ImageDdpgAgent(BaseAgent):
     def step(self, observation, prev_action, prev_reward):
         model_inputs = buffer_to((observation, prev_action, prev_reward),
             device=self.device)
+        # with SummaryWriter("tensorboard") as w:
+        #     w.add_graph(self.model, model_inputs)
+        # assert False
         mu = self.model(*model_inputs)
         action = self.distribution.sample(DistInfo(mean=mu))
         agent_info = AgentInfo(mu=mu)
@@ -147,3 +152,6 @@ class ImageDdpgAgent(BaseAgent):
         self.q_model.load_state_dict(state_dict["q_model"])
         self.target_model.load_state_dict(state_dict["target_model"])
         self.target_q_model.load_state_dict(state_dict["target_q_model"])
+
+    def get_model(self):
+        return self.model

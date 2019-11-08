@@ -27,7 +27,8 @@ class SerialEvalCollector(BaseEvalCollector):
         traj_infos = [self.TrajInfoCls() for _ in range(len(self.envs))]
         completed_traj_infos = list()
         observations = list()
-        should_visualize = not itr % 1000
+        should_visualize = True
+        use_env = True
         if should_visualize:
             vis_frames = [[] for _ in range(len(self.envs))]
         for env in self.envs:
@@ -45,9 +46,12 @@ class SerialEvalCollector(BaseEvalCollector):
             act_pyt, agent_info = self.agent.step(obs_pyt, act_pyt, rew_pyt)
             action = numpify_buffer(act_pyt)
             for b, env in enumerate(self.envs):
-                if should_visualize:
-                    vis_frames[b].append(env.render("rgb_array"))
                 o, r, d, env_info = env.step(action[b])
+                if should_visualize:
+                    if use_env:
+                        vis_frames[b].append(np.transpose(env.render("rgb_array"), (2,0,1)))
+                    else:
+                        vis_frames[b].append(o.observation)
                 traj_infos[b].step(observation[b], action[b], r, d,
                     agent_info[b], env_info)
                 if getattr(env_info, "traj_done", d):
@@ -69,5 +73,6 @@ class SerialEvalCollector(BaseEvalCollector):
             logger.log("Evaluation reached max num time steps "
                 f"({self.max_T}).")
         if should_visualize:
-            logger.save_rollout_vis(vis_frames, itr)
+            # temporarily only save the first environment
+            logger.save_rollout_vis([vis_frames[0]], itr)
         return completed_traj_infos

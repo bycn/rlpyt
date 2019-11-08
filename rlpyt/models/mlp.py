@@ -1,6 +1,6 @@
 
 import torch
-
+import numpy as np
 
 class MlpModel(torch.nn.Module):
     """Multilayer Perceptron with last layer linear."""
@@ -19,10 +19,13 @@ class MlpModel(torch.nn.Module):
             zip([input_size] + hidden_sizes[:-1], hidden_sizes)]
         sequence = list()
         for layer in hidden_layers:
+            torch.nn.init.kaiming_uniform_(layer.weight,a=np.sqrt(5), nonlinearity='relu')
             sequence.extend([layer, nonlinearity()])
         if output_size is not None:
             last_size = hidden_sizes[-1] if hidden_sizes else input_size
             sequence.append(torch.nn.Linear(last_size, output_size))
+            torch.nn.init.uniform_(sequence[-1].weight, -3e-4, 3e-4)
+
         self.model = torch.nn.Sequential(*sequence)
         self._output_size = (hidden_sizes[-1] if output_size is None
             else output_size)
