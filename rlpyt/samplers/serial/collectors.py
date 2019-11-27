@@ -47,7 +47,7 @@ class SerialEvalCollector(BaseEvalCollector):
             action = numpify_buffer(act_pyt)
             for b, env in enumerate(self.envs):
                 o, r, d, env_info = env.step(action[b])
-                if should_visualize:
+                if should_visualize and t % 5 == 0:
                     if use_env:
                         vis_frames[b].append(np.transpose(env.render("rgb_array"), (2,0,1)))
                     else:
