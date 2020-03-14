@@ -27,8 +27,8 @@ class SerialEvalCollector(BaseEvalCollector):
         traj_infos = [self.TrajInfoCls() for _ in range(len(self.envs))]
         completed_traj_infos = list()
         observations = list()
-        should_visualize = True
-        use_env = True
+        should_visualize = False 
+        use_env = False
         if should_visualize:
             vis_frames = [[] for _ in range(len(self.envs))]
         for env in self.envs:
@@ -36,22 +36,38 @@ class SerialEvalCollector(BaseEvalCollector):
         observation = buffer_from_example(observations[0], len(self.envs))
         for b, o in enumerate(observations):
             observation[b] = o
+        # from IPython import embed; embed()
         action = buffer_from_example(self.envs[0].action_space.null_value(),
             len(self.envs))
         reward = np.zeros(len(self.envs), dtype="float32")
         obs_pyt, act_pyt, rew_pyt = torchify_buffer((observation, action, reward))
         self.agent.reset()
         self.agent.eval_mode(itr)
+
+        action_bag = []
+
         for t in range(self.max_T):
+            # if t < 100:
+            #     pass
+                # print(act_pyt, "act_pyt")
+                # print(obs_pyt, act_pyt, rew_pyt)
             act_pyt, agent_info = self.agent.step(obs_pyt, act_pyt, rew_pyt)
             action = numpify_buffer(act_pyt)
+
+            action_bag.append(action)
+
             for b, env in enumerate(self.envs):
+                # print("action", action)
+                # print("action[b]", action[b])
                 o, r, d, env_info = env.step(action[b])
-                if should_visualize and t % 5 == 0:
+                if should_visualize:
                     if use_env:
                         vis_frames[b].append(np.transpose(env.render("rgb_array"), (2,0,1)))
                     else:
-                        vis_frames[b].append(o.observation)
+                        try:
+                            vis_frames[b].append(o.observation)
+                        except:
+                            vis_frames[b].append(o)
                 traj_infos[b].step(observation[b], action[b], r, d,
                     agent_info[b], env_info)
                 if getattr(env_info, "traj_done", d):
@@ -68,6 +84,7 @@ class SerialEvalCollector(BaseEvalCollector):
                     len(completed_traj_infos) >= self.max_trajectories):
                 logger.log("Evaluation reached max num trajectories "
                     f"({self.max_trajectories}).")
+                print(action_bag[::10])
                 break
         if t == self.max_T - 1:
             logger.log("Evaluation reached max num time steps "

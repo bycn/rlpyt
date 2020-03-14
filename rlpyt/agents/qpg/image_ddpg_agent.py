@@ -106,10 +106,11 @@ class ImageDdpgAgent(BaseAgent):
     def step(self, observation, prev_action, prev_reward):
         model_inputs = buffer_to((observation, prev_action, prev_reward),
             device=self.device)
-        # with SummaryWriter("tensorboard") as w:
-        #     w.add_graph(self.model, model_inputs)
-        # assert False
+
         mu = self.model(*model_inputs)
+        # action = torch.tensor([0,0,0,0,0], device=self.device).float()
+        # action[torch.multinomial(mu,1)] = 1
+        # action = action.unsqueeze(0)
         action = self.distribution.sample(DistInfo(mean=mu))
         agent_info = AgentInfo(mu=mu)
         action, agent_info = buffer_to((action, agent_info), device="cpu")

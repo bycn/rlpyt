@@ -8,6 +8,8 @@ from rlpyt.utils.logging import logger
 from rlpyt.replays.non_sequence.frame import (UniformReplayFrameBuffer,
     PrioritizedReplayFrameBuffer, AsyncUniformReplayFrameBuffer,
     AsyncPrioritizedReplayFrameBuffer)
+from rlpyt.replays.non_sequence.uniform import UniformReplayBuffer
+
 from rlpyt.utils.collections import namedarraytuple
 from rlpyt.utils.tensor import select_at_indexes, valid_mean
 from rlpyt.algos.utils import valid_from_done
@@ -131,6 +133,9 @@ class DQN(RlAlgorithm):
         else:
             ReplayCls = (AsyncUniformReplayFrameBuffer if async_ else
                 UniformReplayFrameBuffer)
+        ###
+        ReplayCls = UniformReplayBuffer
+        ###
         self.replay_buffer = ReplayCls(**replay_kwargs)
 
     def optimize_agent(self, itr, samples=None, sampler_itr=None):

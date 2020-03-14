@@ -6,7 +6,9 @@ from rlpyt.samplers.collectors import (DecorrelatingStartCollector,
 from rlpyt.agents.base import AgentInputs
 from rlpyt.utils.buffer import (torchify_buffer, numpify_buffer, buffer_from_example,
     buffer_method)
+from rlpyt.utils.collections import namedarraytuple
 
+AgentInfo = namedarraytuple("AgentInfo", ["mu"])
 
 class CpuResetCollector(DecorrelatingStartCollector):
 
@@ -25,14 +27,16 @@ class CpuResetCollector(DecorrelatingStartCollector):
         for t in range(self.batch_T):
             env_buf.observation[t] = observation
             # Agent inputs and outputs are torch tensors.
-            act_pyt, agent_info = self.agent.step(obs_pyt, act_pyt, rew_pyt)
+            if np.random.rand() < 0.3:
+                randaction = self.envs[0].action_space.sample()
+                act_pyt = torchify_buffer(randaction)
+                agent_info = AgentInfo(mu=act_pyt)
+            else:
+                act_pyt, agent_info = self.agent.step(obs_pyt, act_pyt, rew_pyt)
             action = numpify_buffer(act_pyt)
             for b, env in enumerate(self.envs):
                 # Environment inputs and outputs are numpy arrays.
                 o, r, d, env_info = env.step(action[b])
-                # if t % 20 == 0:
-                #     print("obs", o)
-                #      print("reward", r)
                 traj_infos[b].step(observation[b], action[b], r, d, agent_info[b],
                     env_info)
                 if getattr(env_info, "traj_done", d):

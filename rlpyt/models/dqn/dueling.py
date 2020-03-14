@@ -17,11 +17,11 @@ class DuelingHeadModel(torch.nn.Module):
         super().__init__()
         if isinstance(hidden_sizes, int):
             hidden_sizes = [hidden_sizes]
-        self.advantage_hidden = MlpModel(input_size, hidden_sizes)
+        self.advantage_hidden = MlpModel(input_size, hidden_sizes, init_level=2)
         self.advantage_out = torch.nn.Linear(hidden_sizes[-1], output_size,
             bias=False)
         self.advantage_bias = torch.nn.Parameter(torch.zeros(1))
-        self.value = MlpModel(input_size, hidden_sizes, output_size=1)
+        self.value = MlpModel(input_size, hidden_sizes, output_size=1, init_level=2)
         self._grad_scale = grad_scale
 
     def forward(self, input):

@@ -9,6 +9,7 @@ from rlpyt.models.utils import update_state_dict
 from rlpyt.utils.quick_args import save__init__args
 from rlpyt.utils.logging import logger
 
+import torch
 
 class ImageTd3Agent(ImageDdpgAgent):
 
@@ -68,6 +69,19 @@ class ImageTd3Agent(ImageDdpgAgent):
             device=self.device)
         target_mu = self.target_model(*model_inputs)
         target_action = self.target_distribution.sample(DistInfo(mean=target_mu))
+
+        # try:
+        #     target_action = torch.zeros(target_mu.shape, device=self.device).float()
+        #     ind = torch.multinomial(target_mu, 1)
+        #     for i in range(len(target_action)):
+        #         target_action[i][ind[i]] = 1
+        # except Exception as e:
+        #     print(e)
+        #     from IPython import embed; embed()
+        # try:
+        #     target_q1_at_mu = self.target_q_model(*model_inputs, target_action)
+        # except:
+        #     from IPython import embed; embed()
         target_q1_at_mu = self.target_q_model(*model_inputs, target_action)
         target_q2_at_mu = self.target_q2_model(*model_inputs, target_action)
         return target_q1_at_mu.cpu(), target_q2_at_mu.cpu()

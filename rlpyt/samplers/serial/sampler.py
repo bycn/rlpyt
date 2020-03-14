@@ -29,6 +29,10 @@ class SerialSampler(BaseSampler):
             ):
         B = self.batch_spec.B
         envs = [self.EnvCls(**self.env_kwargs) for _ in range(B)]
+        if seed:
+            print("Setting env seed to: ", seed)
+            for env in envs:
+                env.seed(seed)
         global_B = B * world_size
         env_ranks = list(range(rank * B, (rank + 1) * B))
         agent.initialize(envs[0].spaces, share_memory=False,

@@ -28,7 +28,8 @@ class MuMlpModel(torch.nn.Module):
         # observation = torch.cat((observation.desired_goal, observation.observation), -1)
         observation = observation.observation
         lead_dim, T, B, _ = infer_leading_dims(observation, self._obs_ndim)
-        mu = self._output_max * torch.tanh(self.mlp(observation.view(T * B, -1)))
+        # mu = self._output_max * torch.tanh(self.mlp(observation.view(T * B, -1)))
+        mu = self._output_max * torch.nn.functional.softmax(self.mlp(observation.view(T * B, -1)))
         mu = restore_leading_dims(mu, lead_dim, T, B)
         return mu
 

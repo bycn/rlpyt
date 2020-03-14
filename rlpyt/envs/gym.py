@@ -4,6 +4,7 @@ import gym
 from gym import Wrapper
 from gym.wrappers.time_limit import TimeLimit
 from collections import namedtuple
+import space_wrappers
 
 from rlpyt.envs.base import EnvSpaces, EnvStep
 from rlpyt.spaces.gym_wrapper import GymSpaceWrapper
@@ -125,7 +126,9 @@ def infill_info(info, sometimes_info):
     return info
 
 
-def make(*args, info_example=None, **kwargs):
+def make(*args, info_example=None, special=False, **kwargs):
+    if special:
+        return GymEnvWrapper(space_wrappers.FlattenedActionWrapper(space_wrappers.DiscretizedActionWrapper(gym.make(*args, **kwargs), 3)))
     if info_example is None:
         return GymEnvWrapper(gym.make(*args, **kwargs))
     else:

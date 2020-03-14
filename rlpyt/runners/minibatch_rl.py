@@ -62,6 +62,7 @@ class MinibatchRlBase(BaseRunner):
             rank=rank,
             world_size=world_size,
         )
+        # from IPython import embed; embed()
         self.itr_batch_size = self.sampler.batch_spec.size * world_size
         n_itr = self.get_n_itr()
         self.agent.to_device(self.affinity.get("cuda_idx", None))
@@ -181,7 +182,7 @@ class MinibatchRlBase(BaseRunner):
             #         vis["muGradNormAvg"] = np.average(self._opt_infos["muGradNorm"])
             #     if len(self._opt_infos["qGradNorm"]) > 0:
             #         vis["qGradNormAvg"] = np.average(self._opt_infos["qGradNorm"])
-            #     w.add_scalars("stats", vis)
+            #     w.add_scalars("stats", vis) 
             for k, v in self._opt_infos.items():
                 logger.record_tabular_misc_stat(k, v)
         self._opt_infos = {k: list() for k in self._opt_infos}  # (reset)
@@ -241,8 +242,12 @@ class MinibatchRlEval(MinibatchRlBase):
             self.log_diagnostics(0, eval_traj_infos, eval_time)
         for itr in range(n_itr):
             with logger.prefix(f"itr #{itr} "):
+                # from IPython import embed; embed()
                 self.agent.sample_mode(itr)
                 samples, traj_infos = self.sampler.obtain_samples(itr)
+
+                # torch.save(samples.env.observation.observation, "obs.out")
+
                 self.agent.train_mode(itr)
                 opt_info = self.algo.optimize_agent(itr, samples)
                 self.store_diagnostics(itr, traj_infos, opt_info)

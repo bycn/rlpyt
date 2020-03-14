@@ -31,12 +31,13 @@ class AtariDqnModel(torch.nn.Module):
             strides=strides or [4, 2, 1],
             paddings=paddings or [0, 1, 1],
             use_maxpool=use_maxpool,
+            init_level = 2
         )
         conv_out_size = self.conv.conv_out_size(h, w)
         if dueling:
             self.head = DuelingHeadModel(conv_out_size, fc_sizes, output_size)
         else:
-            self.head = MlpModel(conv_out_size, fc_sizes, output_size)
+            self.head = MlpModel(conv_out_size, fc_sizes, output_size, init_level=2)
 
     def forward(self, observation, prev_action, prev_reward):
         """Feedforward layers process as [T*B,H]. Return same leading dims as

@@ -37,6 +37,7 @@ class MuConv2dModel(torch.nn.Module):
             input_size=conv_out_size, 
             hidden_sizes=fc_sizes, 
             output_size=action_size
+            # output_size=5
         )
 
     def forward(self, observation, prev_action, prev_reward):
@@ -47,6 +48,7 @@ class MuConv2dModel(torch.nn.Module):
         lead_dim, T, B, img_shape = infer_leading_dims(img, 3)
         conv_out = self.conv(img.view(T * B, *img_shape))
         mu = self._output_max * torch.tanh(self.mlp(conv_out.view(T * B, -1)))
+        # mu = self._output_max *  torch.nn.functional.softmax(self.mlp(conv_out.view(T * B, -1)))
         mu = restore_leading_dims(mu, lead_dim, T, B)
         return mu
 
@@ -80,6 +82,7 @@ class QofMuConv2dModel(torch.nn.Module):
         conv_out_size = self.conv.conv_out_size(self._h, self._w)
         self.mlp = MlpModel(
             input_size=(conv_out_size + action_size), 
+            # input_size=(conv_out_size + 5), 
             hidden_sizes=fc_sizes, 
             output_size=1
         )
@@ -93,8 +96,7 @@ class QofMuConv2dModel(torch.nn.Module):
         lead_dim, T, B, img_shape = infer_leading_dims(img, 3)
 
         conv_out = self.conv(img.view(T * B, *img_shape))
-        q_input = torch.cat(
-            [conv_out.view(T * B, -1), action.view(T * B, -1)], dim=1)
+        q_input = torch.cat([conv_out.view(T * B, -1), action.view(T * B, -1)], dim=1)
         q = self.mlp(q_input).squeeze(-1)
         q = restore_leading_dims(q, lead_dim, T, B)
         return q

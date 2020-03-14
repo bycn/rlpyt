@@ -18,7 +18,8 @@ class Conv2dModel(torch.nn.Module):
             nonlinearity=torch.nn.ReLU,  # Module, not Functional.
             use_maxpool=False,  # if True: convs use stride 1, maxpool downsample.
             head_sizes=None,  # Put an MLP head on top.,
-            use_batch_norm=False
+            use_batch_norm=False,
+            init_level = 5
             ):
         super().__init__()
         if paddings is None:
@@ -36,7 +37,8 @@ class Conv2dModel(torch.nn.Module):
             zip(in_channels, channels, kernel_sizes, strides, paddings)]
         for conv in conv_layers:
         #     torch.nn.init.kaiming_uniform_(conv.weight,a=0.2, nonlinearity='leaky_relu')
-            torch.nn.init.kaiming_uniform_(conv.weight,a=np.sqrt(5), nonlinearity='relu')
+            # torch.nn.init.kaiming_uniform_(conv.weight,nonlinearity='relu')
+            torch.nn.init.orthogonal_(conv.weight)
 
         batch_layers = [
             torch.nn.BatchNorm2d(oc) for oc in channels

@@ -328,6 +328,7 @@ def pop_prefix():
 
 def save_itr_params(itr, params):
     if _snapshot_dir:
+        print(_snapshot_mode)
         if _snapshot_mode == 'all':
             file_name = osp.join(get_snapshot_dir(), 'itr_%d.pkl' % itr)
         elif _snapshot_mode == 'last':
